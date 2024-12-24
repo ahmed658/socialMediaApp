@@ -1,4 +1,3 @@
-# socialMediaApp
 # Social Media App - High-Quality Documentation
 
 This is a Python-based social media application built with **FastAPI**. It provides a RESTful API to handle users, posts, votes, and authentication. This document explains the application structure, main components, and future paths for API routes.
