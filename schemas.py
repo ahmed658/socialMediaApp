@@ -40,9 +40,11 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     id: Optional[int] = None
     
-class VoteCreate(BaseModel):
+class Vote(BaseModel):
     post_id: int
-    vote_dir: conint(ge= -1, le= 1)
+    
+class VoteCreate(Vote):
+    vote_dir: conint(le=1, ge=0)
     
 class VoteReturn(VoteCreate):
     user_id: int
