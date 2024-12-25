@@ -12,6 +12,10 @@ class UserOut(BaseModel):
     id: int
     created_at: datetime
     
+    class Config:
+        orm_mode = True
+        from_attributes=True
+    
 class PostCreate(PostBase):
     pass
 
@@ -20,14 +24,17 @@ class PostReturn(PostBase):
     created_at: datetime
     owner_id: int
     owner: UserOut
-    
-#    class Config:
-#        orm_mode = True
-       
+    class Config:
+        orm_mode = True
+
 class CreateUser(BaseModel):
     email: EmailStr
     password: str
 
+class PostReturnWithVotes(PostReturn):
+    votes: int
+    class Config:
+        orm_mode = True
 
     
 #class LoginUser(CreateUser):

@@ -1,6 +1,8 @@
 from fastapi import FastAPI, HTTPException, status, Response, Depends, APIRouter
 from typing import List, Optional
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from .. import models, schemas, oauth2
 from ..database import get_db
 
@@ -18,16 +20,34 @@ def create_post(post: schemas.PostCreate, db: Session = Depends(get_db), current
     db.refresh(newPost)
     return newPost
 
-@router.get("/", response_model=List[schemas.PostReturn])
-def get_posts(db: Session = Depends(get_db), limit: int = 10, skip: int = 0, search: Optional[str] = ""):
-    posts = db.query(models.Post).filter(models.Post.title.contains(search)).limit(limit).offset(skip).all()
+@router.get("/", response_model=List[schemas.PostReturnWithVotes])
+def get_posts(db: Session = Depends(get_db), limit: int = 10, skip: int = 0, search: Optional[str] = "", response_model=List[schemas.PostReturnWithVotes]):
+    results = db.query(models.Post, func.count(models.Vote.post_id).label("votes")).join(models.Vote, models.Post.id == models.Vote.post_id, isouter=True).group_by(models.Post.id).filter(models.Post.title.contains(search)).limit(limit).offset(skip).all()
+
+    # Serialize the response
+    posts = []
+    for post, votes in results:
+        # `post.owner` is now loaded
+        post_dict = jsonable_encoder(post)
+        post_dict["owner"] = jsonable_encoder(post.owner)    # <-- add owner 
+        post_dict["votes"] = votes
+        posts.append(post_dict)
+
     return posts
 
-@router.get("/{id}", response_model=schemas.PostReturn)
+    
+
+@router.get("/{id}", response_model=schemas.PostReturnWithVotes)
 def get_post(id: int, db: Session = Depends(get_db)):
-    post = db.query(models.Post).filter(models.Post.id == id).first()
+    post = db.query(models.Post, func.count(models.Vote.post_id).label("votes")).join(models.Vote, models.Post.id == models.Vote.post_id, isouter=True).group_by(models.Post.id).filter(models.Post.id == id).first()
     if post:
-        return post
+        post_obj, votes = post
+        post_data = {
+            **post_obj.__dict__,  # Convert the Post object to a dictionary
+            "votes": votes,
+            "owner": post_obj.owner  # Validate owner using UserOut
+        }
+        return post_data
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with ID {id} was not found.")
 
 @router.delete("/{id}")
