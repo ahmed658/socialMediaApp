@@ -3,10 +3,23 @@ from . import models
 from .config import settings
 from .database import engine
 from .routers import post, user, auth, vote
+from fastapi.middleware.cors import CORSMiddleware
 
 socialMediaApp = FastAPI()
 
-models.Base.metadata.create_all(bind=engine)
+# using Almebic now instead
+# models.Base.metadata.create_all(bind=engine)
+
+origins = ["*"]
+
+socialMediaApp.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 
 socialMediaApp.include_router(post.router)
